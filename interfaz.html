@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PigeonPhotoMaketation</title>
+<style>
+  :root {
+    --bg: #f4f4f1; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e2e2dc;
+    --accent: #2f6fdb; --accent-ink: #fff; --red: #e0262b; --blue: #0078dc; --orange: #ff9f1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #18181a; --panel: #222225; --ink: #ececea; --muted: #9a9a95; --line: #34343a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header span { color: var(--muted); }
+  main { display: grid; grid-template-columns: 210px 1fr; gap: 16px; padding: 16px 20px; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  .thumbs { display: grid; gap: 8px; }
+  .thumb { border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--bg); position: relative; padding: 0; }
+  .thumb img { width: 100%; height: 100px; object-fit: cover; display: block; }
+  .thumb.sel { border-color: var(--accent); }
+  .thumb small { position: absolute; left: 4px; bottom: 4px; background: rgba(0,0,0,.6); color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+  .upload { display: block; margin-top: 10px; padding: 14px 8px; border: 2px dashed var(--line); border-radius: 8px; text-align: center; color: var(--muted); cursor: pointer; }
+  .upload.drag { border-color: var(--accent); color: var(--accent); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  button { font: inherit; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button.on { background: var(--ink); color: var(--bg); }
+  .hint { color: var(--muted); margin-left: auto; }
+  .hint b { color: var(--red); }
+  .stage { position: relative; background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/20px 20px; border-radius: 8px; display: flex; justify-content: center; min-height: 300px; align-items: center; }
+  #cv { max-width: 100%; max-height: 62vh; cursor: crosshair; display: block; touch-action: none; }
+  .empty { color: var(--muted); padding: 60px 20px; text-align: center; }
+  .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 1000px) { .results { grid-template-columns: 1fr; } }
+  .results figure { margin: 0; }
+  .results img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; background: #fff; }
+  figcaption { font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  figcaption small { font-weight: 400; color: var(--muted); }
+  .status { margin-top: 10px; min-height: 20px; color: var(--muted); }
+  .status.err { color: var(--red); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  label.chk { font-weight: 400; font-size: 12px; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: s 0.8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>PigeonPhotoMaketation</h1>
+  <span>Quita el fondo, centra la paloma y la coloca en la postura de referencia</span>
+</header>
+<main>
+  <aside class="panel">
+    <h2>Fotos</h2>
+    <div class="thumbs" id="thumbs"></div>
+    <label class="upload" id="drop">
+      <input type="file" id="file" accept="image/*" hidden>
+      Subir una foto<br><small>o arrástrala aquí</small>
+    </label>
+  </aside>
+
+  <section>
+    <div class="panel">
+      <div class="toolbar">
+        <div class="seg">
+          <button id="mPts" class="on">Puntos clave</button>
+          <button id="mRect">Recuadro</button>
+        </div>
+        <button id="undo">Deshacer</button>
+        <button id="clear">Borrar todo</button>
+        <button id="save" title="Guarda los puntos como .json junto a la foto, igual que «paloma.py pick»">Guardar puntos</button>
+        <button id="run" class="primary">Procesar</button>
+        <span class="hint" id="hint"></span>
+      </div>
+      <div class="stage" id="stage"><div class="empty">Elige una foto de la izquierda o sube una tuya</div></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--red)"></i>puntos marcados</span>
+        <span><i class="dot" style="background:var(--orange)"></i>recuadro (opcional, ayuda a GrabCut)</span>
+        <span>Sin puntos solo se quita el fondo y se centra; con los 4 puntos además se deforma hacia la referencia.</span>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="results" id="results" hidden>
+      <figure><figcaption>1 · Máscara <small>GrabCut</small></figcaption><img id="rMask" alt=""></figure>
+      <figure><figcaption>2 · Centrada <small><span style="color:var(--red)">●</span> marcados → <span style="color:var(--blue)">●</span> referencia</small></figcaption><img id="rCent" alt=""></figure>
+      <figure><figcaption>3 · Final
+        <span><label class="chk"><input type="checkbox" id="showRef"> ver referencia</label>
+        <button id="dl" style="padding:3px 8px">Descargar</button></span></figcaption><img id="rFinal" alt=""></figure>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let NAMES = [], img = null, current = null, points = [], rect = null, mode = 'pts', drag = null, last = null;
+
+const cv = document.createElement('canvas'); cv.id = 'cv';
+const ctx = cv.getContext('2d');
+
+async function init() {
+  const cfg = await (await fetch('/api/config')).json();
+  NAMES = Object.keys(cfg.puntos);
+  await loadExamples();
+  bind();
+  hint();
+}
+
+async function loadExamples(select) {
+  const list = await (await fetch('/api/ejemplos')).json();
+  $('thumbs').innerHTML = '';
+  for (const e of list) {
+    const b = document.createElement('button');
+    b.className = 'thumb'; b.dataset.name = e.nombre;
+    b.innerHTML = `<img src="/ejemplos/${encodeURIComponent(e.nombre)}" alt=""><small>${e.nombre}${e.puntos ? ' · ✓ puntos' : ''}</small>`;
+    b.onclick = () => openImage(`/ejemplos/${encodeURIComponent(e.nombre)}`, { nombre: e.nombre, puntos: e.puntos });
+    $('thumbs').appendChild(b);
+  }
+  markSelected();
+}
+
+function markSelected() {
+  document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('sel', current && t.dataset.name === current.nombre));
+}
+
+function openImage(src, meta) {
+  const im = new Image();
+  im.onload = () => {
+    img = im; current = meta; points = meta.puntos ? meta.puntos.map(p => [...p]) : []; rect = null;
+    cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+    $('stage').innerHTML = ''; $('stage').appendChild(cv);
+    $('results').hidden = true; status('');
+    markSelected(); draw(); hint();
+  };
+  im.src = src;
+}
+
+function scale() { return Math.max(cv.width, cv.height) / 900; }
+
+function draw() {
+  if (!img) return;
+  ctx.drawImage(img, 0, 0);
+  const s = scale();
+  const r = rect || (drag && drag.r);
+  if (r) {
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.fillRect(0, 0, cv.width, r[1]); ctx.fillRect(0, r[1] + r[3], cv.width, cv.height);
+    ctx.fillRect(0, r[1], r[0], r[3]); ctx.fillRect(r[0] + r[2], r[1], cv.width, r[3]);
+    ctx.strokeStyle = '#ff9f1a'; ctx.lineWidth = 3 * s; ctx.strokeRect(...r);
+  }
+  ctx.font = `600 ${18 * s}px -apple-system, sans-serif`;
+  points.forEach(([x, y], i) => {
+    ctx.beginPath(); ctx.arc(x, y, 8 * s, 0, 7);
+    ctx.fillStyle = '#e0262b'; ctx.fill(); ctx.lineWidth = 2 * s; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.lineWidth = 4 * s; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(NAMES[i], x + 12 * s, y - 10 * s);
+    ctx.fillStyle = '#fff'; ctx.fillText(NAMES[i], x + 12 * s, y - 10 * s);
+  });
+}
+
+function hint() {
+  const h = $('hint');
+  if (!img) h.textContent = '';
+  else if (mode === 'rect') h.innerHTML = 'Arrastra un recuadro alrededor de la paloma';
+  else if (points.length < NAMES.length) h.innerHTML = `Haz clic en: <b>${NAMES[points.length].replace('_', ' ')}</b> (${points.length + 1}/${NAMES.length})`;
+  else h.textContent = 'Puntos completos ✓';
+  $('undo').disabled = !img || (!points.length && !rect);
+  $('clear').disabled = $('undo').disabled;
+  $('run').disabled = !img || (points.length > 0 && points.length < NAMES.length);
+  $('save').disabled = !(current && current.nombre && points.length === NAMES.length);
+  $('mPts').classList.toggle('on', mode === 'pts'); $('mRect').classList.toggle('on', mode === 'rect');
+}
+
+function pos(ev) {
+  const b = cv.getBoundingClientRect();
+  return [Math.round((ev.clientX - b.left) * cv.width / b.width), Math.round((ev.clientY - b.top) * cv.height / b.height)];
+}
+
+function status(msg, err) { $('status').innerHTML = msg; $('status').className = 'status' + (err ? ' err' : ''); }
+
+function bind() {
+  cv.addEventListener('pointerdown', (ev) => {
+    if (!img) return;
+    const p = pos(ev);
+    if (mode === 'pts') {
+      if (points.length < NAMES.length) { points.push(p); draw(); hint(); }
+    } else { drag = { p0: p, r: null }; cv.setPointerCapture(ev.pointerId); }
+  });
+  cv.addEventListener('pointermove', (ev) => {
+    if (!drag) return;
+    const [x, y] = pos(ev), [x0, y0] = drag.p0;
+    drag.r = [Math.min(x, x0), Math.min(y, y0), Math.abs(x - x0), Math.abs(y - y0)]; draw();
+  });
+  cv.addEventListener('pointerup', () => {
+    if (!drag) return;
+    if (drag.r && drag.r[2] > 20 && drag.r[3] > 20) rect = drag.r;
+    drag = null; draw(); hint();
+  });
+  $('mPts').onclick = () => { mode = 'pts'; hint(); };
+  $('mRect').onclick = () => { mode = 'rect'; hint(); };
+  $('undo').onclick = () => { if (mode === 'rect' && rect) rect = null; else if (points.length) points.pop(); else rect = null; draw(); hint(); };
+  $('clear').onclick = () => { points = []; rect = null; draw(); hint(); };
+  $('run').onclick = run;
+  $('save').onclick = save;
+  $('showRef').onchange = showFinal;
+  $('dl').onclick = () => {
+    const a = document.createElement('a'); a.href = last.final;
+    a.download = ((current && current.nombre) || 'paloma').replace(/\.\w+$/, '') + '_estandar.jpg'; a.click();
+  };
+  $('file').onchange = (e) => e.target.files[0] && openFile(e.target.files[0]);
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && openFile(e.dataTransfer.files[0]));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' || (e.key === 'z' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); $('undo').click(); }
+    if (e.key === 'Enter' && !$('run').disabled) run();
+  });
+}
+
+function openFile(f) {
+  const r = new FileReader();
+  r.onload = () => openImage(r.result, { nombre: null, subida: f.name, puntos: null });
+  r.readAsDataURL(f);
+}
+
+function dataUrl() {
+  const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0); return c.toDataURL('image/jpeg', 0.95);
+}
+
+async function run() {
+  status('<span class="spinner"></span>Procesando… (GrabCut tarda unos segundos)');
+  $('run').disabled = true;
+  try {
+    const res = await fetch('/api/procesar', { method: 'POST', body: JSON.stringify({
+      imagen: dataUrl(), rect, puntos: points.length === NAMES.length ? points : null }) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error);
+    last = d;
+    $('rMask').src = d.mascara; $('rCent').src = d.centrada; showFinal();
+    $('results').hidden = false;
+    status(`Listo en ${d.segundos} s · ${d.deformada ? 'con deformación hacia la referencia' : 'sin deformación (marca los 4 puntos para deformar)'}`);
+    $('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { status('Error: ' + e.message, true); }
+  hint();
+}
+
+function showFinal() { if (last) $('rFinal').src = $('showRef').checked ? last.final_ref : last.final; }
+
+async function save() {
+  const res = await fetch('/api/guardar-puntos', { method: 'POST', body: JSON.stringify({ nombre: current.nombre, puntos: points }) });
+  const d = await res.json();
+  if (!res.ok) return status('Error: ' + d.error, true);
+  current.puntos = points.map(p => [...p]);
+  status(`Guardado ejemplos/${d.guardado}: «paloma.py batch ejemplos resultados» lo usará`);
+  loadExamples();
+}
+
+init();
+</script>
+</body>
+</html>

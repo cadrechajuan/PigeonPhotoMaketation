@@ -30,6 +30,13 @@ python paloma.py batch fotos resultados
 python paloma.py batch fotos resultados --rect 100,80,1500,1800
 ```
 
+## Interfaz de prueba
+
+Doble clic en `Abrir interfaz.command` (o `python app.py`) abre http://127.0.0.1:8765 en el navegador.
+Elige una foto de `ejemplos/` o sube una tuya, marca opcionalmente un recuadro y los 4 puntos clave,
+y pulsa «Procesar» para ver la máscara, la paloma centrada y el resultado final.
+«Guardar puntos» escribe el mismo `.json` que `paloma.py pick`, así que luego sirve para `batch`.
+
 ## Notas
 
 - Las coordenadas de referencia (`REF_POINTS` en `paloma.py`) son aproximadas y deben ajustarse a tu foto de referencia.

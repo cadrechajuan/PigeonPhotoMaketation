@@ -1,0 +1,9 @@
+Fotos de ejemplo descargadas de Wikimedia Commons (solo para pruebas).
+
+hembra_perfil.jpg  - "Racing pigeon hen, side view" - Spookymomma - CC BY-SA 4.0
+blanca_1.jpg       - "Racing Homer White"           - Bodlina     - CC BY-SA 3.0
+blanca_2.jpg       - "Racing Homer White 2"         - Bodlina     - CC BY-SA 3.0
+rataedl.jpg        - "Racing pigeon rataedl"        - RATAEDL     - CC BY-SA 2.0
+mensajera_2am.jpg  - "Racing pigeon 2am"            - Mamun2a     - CC BY-SA 3.0
+
+https://commons.wikimedia.org/wiki/File:<nombre original>
